@@ -13,9 +13,10 @@ function App() {
           className="App-link"
           href="https://reactjs.org"
           target="_blank"
-          // rel="noopener noreferrer"
+        // rel="noopener noreferrer"
         >
           Learn React
+          <h2>How to grow a stack over time</h2>
         </a>
       </header>
     </div>
