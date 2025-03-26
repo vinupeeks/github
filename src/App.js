@@ -18,9 +18,7 @@ function App() {
           <h2>How to grow a stack over time</h2>    
           <h2>How to grow a stack over time</h2>  
           <h2>How to grow a stack over time</h2>      
-          <h2>How to grow a stack over time</h2>      
-          <h2>How to grow a stack over time</h2>   
-          <h2>How to grow a stack over time</h2>    
+          <h2>How to grow a stack over time</h2>        
           <h2>How to grow a stack over time</h2>  
           <h2>How to grow a stack over time</h2>      
           <h2>How to grow a stack over time</h2>  
