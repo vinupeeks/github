@@ -26,7 +26,9 @@ function App() {
           <h2>How to grow a stack over time</h2> 
           <h2>How to grow a stack over time</h2> 
           <h2>How to grow a stack over time</h2> 
-          <h2>How to grow a stack over time</h2>  
+          <h2>How to grow a stack over time</h2>  success	false
+message	"Error updating hotel with categories"
+error	"Cannot read properties of undefined (reading 'findByPk')"
           <h2>How to grow a stack over time</h2> 
           <h2>How to grow a stack over time</h2>   
           <h2>How to grow a stack over time</h2> 
