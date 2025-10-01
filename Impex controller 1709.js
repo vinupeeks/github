@@ -17,99 +17,99 @@ const InspectionScore = db.inspectionScore
 const Op = db.Sequelize.Op
 
 const negativeObsertions = {
-    "Hardware": ["Observable or detectable deficiency"],
-    "Process": ["Not as expected – procedure and/or document deficient."],
-    "Human": ["Not as expected"],
-    "Photograph": ["Photo not representative."]
+  "Hardware": ["Observable or detectable deficiency"],
+  "Process": ["Not as expected – procedure and/or document deficient."],
+  "Human": ["Not as expected"],
+  "Photograph": ["Photo not representative."]
 }
 
 const positiveObsertions = {
-    "Human": ["Exceeded normal expectation"]
+  "Human": ["Exceeded normal expectation"]
 }
 
 const nocGrouped = {
-    "Hardware": [
-      "Maintenance task available – not completed",
-      "Maintenance task available – records incompatible with condition seen",
-      "No maintenance task developed",
-      "Maintenance deferred – awaiting spares",
-      "Maintenance deferred – awaiting technician",
-      "Maintenance deferred – awaiting out of service / gas free",
-      "Sudden failure – maintenance tasks available and up to date",
-      "Other - Text",
-      "Not applicable – as instructed by question guidance",
-      "Other – provide reason",
-      "Equipment not fitted – erroneous entry in HVPQ"
-    ],
-    "Process": [
-      "No procedure",
-      "Procedure not present/available/accessible",
-      "Too many/conflicting procedures",
-      "Procedure clarity and understandability",
-      "Procedure accuracy/correctness",
-      "Procedure realism/feasibility/suitability",
-      "Procedure completeness/validity/version",
-      "Communication of procedure/practice updates",
-      "Other – text",
-      "Not applicable – as instructed by question guidance",
-      "Communication of procedure/practice updates"
-    ],
-    "Human": [
-      "1. Recognition of Safety criticality of the task or associated steps",
-      "2. Custom and practice surrounding use of procedures",
-      "3. Procedures accessible, helpful, understood and accurate for task",
-      "4. Team dynamics, communications and coordination with others",
-      "5. Evidence of stress, workload, fatigue, time constraints",
-      "6. Factors such as morale, motivation, nervousness",
-      "7. Workplace ergonomics incl. signage, tools, layout, space, noise, light, heat, etc",
-      "8. Human-Machine Interface (E.g.: Controls, Alarms, etc.)",
-      "9. Opportunity to learn or practice",
-      "10. Not Identified",
-      "Not applicable – as instructed by question guidance"
-    ],
-    "Photograph": [
-      "Area/item shown recently upgraded – maintenance programme in progress",
-      "Area/item shown recently upgraded – no evidence of ongoing maintenance plan",
-      "Area/item shown not representative of the overall condition",
-      "Other - Text",
-    ]
+  "Hardware": [
+    "Maintenance task available – not completed",
+    "Maintenance task available – records incompatible with condition seen",
+    "No maintenance task developed",
+    "Maintenance deferred – awaiting spares",
+    "Maintenance deferred – awaiting technician",
+    "Maintenance deferred – awaiting out of service / gas free",
+    "Sudden failure – maintenance tasks available and up to date",
+    "Other - Text",
+    "Not applicable – as instructed by question guidance",
+    "Other – provide reason",
+    "Equipment not fitted – erroneous entry in HVPQ"
+  ],
+  "Process": [
+    "No procedure",
+    "Procedure not present/available/accessible",
+    "Too many/conflicting procedures",
+    "Procedure clarity and understandability",
+    "Procedure accuracy/correctness",
+    "Procedure realism/feasibility/suitability",
+    "Procedure completeness/validity/version",
+    "Communication of procedure/practice updates",
+    "Other – text",
+    "Not applicable – as instructed by question guidance",
+    "Communication of procedure/practice updates"
+  ],
+  "Human": [
+    "1. Recognition of Safety criticality of the task or associated steps",
+    "2. Custom and practice surrounding use of procedures",
+    "3. Procedures accessible, helpful, understood and accurate for task",
+    "4. Team dynamics, communications and coordination with others",
+    "5. Evidence of stress, workload, fatigue, time constraints",
+    "6. Factors such as morale, motivation, nervousness",
+    "7. Workplace ergonomics incl. signage, tools, layout, space, noise, light, heat, etc",
+    "8. Human-Machine Interface (E.g.: Controls, Alarms, etc.)",
+    "9. Opportunity to learn or practice",
+    "10. Not Identified",
+    "Not applicable – as instructed by question guidance"
+  ],
+  "Photograph": [
+    "Area/item shown recently upgraded – maintenance programme in progress",
+    "Area/item shown recently upgraded – no evidence of ongoing maintenance plan",
+    "Area/item shown not representative of the overall condition",
+    "Other - Text",
+  ]
 };
 
 const applyScores = async (questions, user_id) => {
-  try{
+  try {
     const scoreMap = await getFormattedUserScoreMap(user_id)
     return questions.map((q) => {
       const updated = { ...q };
 
       ['hardwareNegatives', 'processNegatives', 'humanNegatives', 'photoNegatives'].forEach((category) => {
         if (!Array.isArray(updated[category])) return;
-        
+
         updated[category] = updated[category].map((neg) => {
           const noc = neg.noc?.trim();
           const soc = neg.soc?.toLowerCase();
           let score = null;
 
           if (category === 'hardwareNegatives') {
-            if(q.tag === "Core"){          
-                score = scoreMap.Hardware[noc]?.coreVIQ;
-              }else if(q.tag === "Rotational 1" || q.tag === "Rotational 2"){
-                score = scoreMap.Hardware[noc]?.rotationalVIQ;
-              }        
+            if (q.tag === "Core") {
+              score = scoreMap.Hardware[noc]?.coreVIQ;
+            } else if (q.tag === "Rotational 1" || q.tag === "Rotational 2") {
+              score = scoreMap.Hardware[noc]?.rotationalVIQ;
+            }
           }
 
           if (category === 'processNegatives') {
-            if(q.tag === "Core"){
+            if (q.tag === "Core") {
               score = scoreMap.Process[noc]?.coreVIQ;
-            }else if(q.tag === "Rotational 1" || q.tag === "Rotational 2"){
+            } else if (q.tag === "Rotational 1" || q.tag === "Rotational 2") {
               score = scoreMap.Process[noc]?.rotationalVIQ;
             }
           }
 
           if (category === 'humanNegatives') {
             const role = soc?.includes('junior') || soc?.includes('rating') ? 'Junior' : 'Senior';
-            if(q.tag === "Core"){          
+            if (q.tag === "Core") {
               score = scoreMap.Human[role][noc]?.coreVIQ;
-            }else if(q.tag === "Rotational 1" || q.tag === "Rotational 2"){          
+            } else if (q.tag === "Rotational 1" || q.tag === "Rotational 2") {
               score = scoreMap.Human[role][noc]?.rotationalVIQ;
             }
           }
@@ -128,7 +128,7 @@ const applyScores = async (questions, user_id) => {
       return updated;
     });
   }
-  catch(err){
+  catch (err) {
     console.log(err)
   }
 };
@@ -141,7 +141,7 @@ const getQuestionData = async () => {
     console.error('Error fetching question data:', error);
     return null;
   }
-} 
+}
 
 function getInspectionCompletedDate(page2Text) {
   const lines = page2Text.split('\n');
@@ -164,94 +164,93 @@ function getInspectionCompletedDate(page2Text) {
   return null;
 }
 
-const convertToExcel = async (req, res)=>{
-    try{
+const convertToExcel = async (req, res) => {
+  try {
 
-        const { filename } = req.body
+    const { filename } = req.body
 
-        const allQuestionData = await getQuestionData();
+    const allQuestionData = await getQuestionData();
 
-        const file = await callPythonScript(filename);
+    const file = await callPythonScript(filename);
 
-        const outputFileName = file.jsonFilePath
-        
-        const data = JSON.parse(fs.readFileSync(outputFileName, 'utf-8'));
-        // const data = JSON.parse(fs.readFileSync("./files/output_20250602_211244.json", 'utf-8'));
-        
-        const reportDate = getInspectionCompletedDate(file.page2Text);
+    const outputFileName = file.jsonFilePath
 
-        const filteredData = data.filter(item => {
-            return !sections.some(section => item.content.includes(section));
-        });
+    const data = JSON.parse(fs.readFileSync(outputFileName, 'utf-8'));
+    // const data = JSON.parse(fs.readFileSync("./files/output_20250602_211244.json", 'utf-8'));
 
-        let index = 0
-        let array = []
+    const reportDate = getInspectionCompletedDate(file.page2Text);
 
-        function getVesselName(reportString) {
-            const prefix = "Report for ";
-            const suffixStart = reportString.indexOf(" [");
-            
-            if (reportString.startsWith(prefix) && suffixStart !== -1) {
-                return reportString.substring(prefix.length, suffixStart);
-            }
-            return null;
-        }
+    const filteredData = data.filter(item => {
+      return !sections.some(section => item.content.includes(section));
+    });
 
-        const vesselName = getVesselName(data[0].content) || "ocimf"
+    let index = 0
+    let array = []
 
-        function getVesselsOperationData(page2Text) {
-        const lines = page2Text.split('\n');
-        const targetLabel = "Vessel's operation at the time of the inspection";
-        const index = lines.findIndex(line => line.trim().toLowerCase() === targetLabel.toLowerCase());
+    function getVesselName(reportString) {
+      const prefix = "Report for ";
+      const suffixStart = reportString.indexOf(" [");
 
-        if (index !== -1 && lines[index + 1]) {
-          return lines[index + 1].trim();
-        }
-        return null;
+      if (reportString.startsWith(prefix) && suffixStart !== -1) {
+        return reportString.substring(prefix.length, suffixStart);
       }
-      const vesselsOperationData = getVesselsOperationData(file.page2Text);
-      // console.log("Vessel's Operation:", vesselsOperationData);
-
-        filteredData.forEach(i => {
-            if(
-                i.content !== "" &&
-                i.content !== " " &&
-                i.content !== data[0].content &&
-                !i.content.includes("© 2024 Oil Companies International Marine Forum") &&
-                !i.content.includes("© 2025 Oil Companies International Marine Forum")
-            ){
-                array.push({data: i.content, index: index ++ })
-            }
-        });
-
-        const response = await chapterWiseSort(array, allQuestionData) 
-
-        const user = req.user
-
-        const newScoredData = await applyScores(response, user.id);
-
-        const filePath = path.join(__dirname, '../../', outputFileName);
-
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error('Error deleting file:', err);
-            } else {
-                console.log('File deleted successfully');
-            }
-        });
-
-        const insertData = await createVesselWithInspectionAndScores(newScoredData, user, req.body, reportDate, filename, vesselsOperationData  )
-
-        if(insertData.success){
-          res.status(200).json({message: insertData.message, success: true, data: newScoredData, vesselName});
-        }else{
-          res.status(500).json({message: insertData.message, success: false});
-        }
-
+      return null;
     }
-    catch(err){
-        console.log(err)
+
+    const vesselName = getVesselName(data[0].content) || "ocimf"
+
+    function getVesselsOperationData(page2Text) {
+      const lines = page2Text.split('\n');
+      const targetLabel = "Vessel's operation at the time of the inspection";
+      const index = lines.findIndex(line => line.trim().toLowerCase() === targetLabel.toLowerCase());
+
+      if (index !== -1 && lines[index + 1]) {
+        return lines[index + 1].trim();
+      }
+      return null;
     }
+    const vesselsOperationData = getVesselsOperationData(file.page2Text);
+
+    filteredData.forEach(i => {
+      if (
+        i.content !== "" &&
+        i.content !== " " &&
+        i.content !== data[0].content &&
+        !i.content.includes("© 2024 Oil Companies International Marine Forum") &&
+        !i.content.includes("© 2025 Oil Companies International Marine Forum")
+      ) {
+        array.push({ data: i.content, index: index++ })
+      }
+    });
+
+    const response = await chapterWiseSort(array, allQuestionData)
+
+    const user = req.user
+
+    const newScoredData = await applyScores(response, user.id);
+
+    const filePath = path.join(__dirname, '../../', outputFileName);
+
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error('Error deleting file:', err);
+      } else {
+        console.log('File deleted successfully');
+      }
+    });
+
+    const insertData = await createVesselWithInspectionAndScores(newScoredData, user, req.body, reportDate, filename, vesselsOperationData)
+
+    if (insertData.success) {
+      res.status(200).json({ message: insertData.message, success: true, data: newScoredData, vesselName });
+    } else {
+      res.status(500).json({ message: insertData.message, success: false });
+    }
+
+  }
+  catch (err) {
+    console.log(err)
+  }
 }
 
 async function createVesselWithInspectionAndScores(newScoredData, user, data, reportDate, fileName, vesselsOperationData) {
@@ -260,11 +259,11 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
 
   const inspection = await VesselInspections.findOne({
     where: {
-      [Op.and]: [{ vessel_id: vessel_id }, {report_date: reportDate}, {status: {[Op.ne]: "deleted"}}],
+      [Op.and]: [{ vessel_id: vessel_id }, { report_date: reportDate }, { status: { [Op.ne]: "deleted" } }],
     }
   })
 
-  if(inspection) {
+  if (inspection) {
     return {
       success: false,
       message: "Report already exists for this date"
@@ -272,11 +271,12 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
   }
 
   await VesselInspections.update(
-    {status: "inactive"}, 
-    {where: {
-      [Op.and]: [{vessel_id}, {status: {[Op.ne]: "deleted"}}]
-    }
-  })
+    { status: "inactive" },
+    {
+      where: {
+        [Op.and]: [{ vessel_id }, { status: { [Op.ne]: "deleted" } }]
+      }
+    })
 
   const vessel = await Vessels.findOne({
     where: {
@@ -287,7 +287,7 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
     }
   });
 
-  if(!vessel) {
+  if (!vessel) {
     return {
       success: false,
       message: "Vessel not found"
@@ -303,7 +303,6 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
     report_name: fileName,
     vesselsOperation: vesselsOperationData
   });
-  // console.log("vesselsOperationData", vesselsOperationData)
 
   for (const item of newScoredData) {
     const question = await InspectionQuestions.create({
@@ -311,8 +310,8 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
       viq: item.question_no,
       question: item.question,
       tag: item.tag,
-      chapter_no : item.chapter_no,
-     });
+      chapter_no: item.chapter_no,
+    });
 
     if (!question) continue;
 
@@ -321,11 +320,11 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
     const fetchScoreData = (negatives, category, isPositive) => {
       if (!Array.isArray(negatives)) return;
       for (const neg of negatives) {
-        const filteredOperatorComments = item.operatorComments?.operatorComments 
-        ? item.operatorComments.operatorComments.filter(comment => 
+        const filteredOperatorComments = item.operatorComments?.operatorComments
+          ? item.operatorComments.operatorComments.filter(comment =>
             comment.category === category.toLowerCase()
           )
-        : null;
+          : null;
         scoresToInsert.push({
           question_id: question.id,
           negative: neg.negative,
@@ -353,7 +352,7 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
     if (scoresToInsert.length > 0) {
       await InspectionScore.bulkCreate(scoresToInsert);
     }
-      
+
   }
 
   return {
@@ -364,198 +363,119 @@ async function createVesselWithInspectionAndScores(newScoredData, user, data, re
 }
 
 
-const chapterWiseSort = async(data, allQuestionData)=>{
+const chapterWiseSort = async (data, allQuestionData) => {
 
-    const formatChapter = chapters.map(item => {
-        return item.chapter_no + ". " + item.name
+  const formatChapter = chapters.map(item => {
+    return item.chapter_no + ". " + item.name
+  })
+
+  const matchedData = data.filter(item =>
+    formatChapter.some(chapter => item.data.includes(chapter))
+  );
+
+  const uniqueData = matchedData.filter((item, index) => {
+    return matchedData.findIndex((i) => i.data === item.data) === index;
+  });
+
+
+  let array = []
+  for (let i = 0; i < uniqueData.length; i++) {
+    array.push({
+      data: uniqueData[i].data,
+      startIndex: uniqueData[i].index,
+      endIndex: uniqueData[i + 1] ? uniqueData[i + 1].index - 1 : data.length
     })
+  }
 
-    const matchedData = data.filter(item => 
-        formatChapter.some(chapter => item.data.includes(chapter))
-    );
+  const response = await chapterWiseFilter(data, array, allQuestionData)
 
-    const uniqueData = matchedData.filter((item, index) => {
-        return matchedData.findIndex((i) => i.data === item.data) === index;
-    });
-
-
-    let array = []
-    for(let i = 0; i < uniqueData.length; i++) {
-        array.push({
-            data: uniqueData[i].data,
-            startIndex: uniqueData[i].index,
-            endIndex: uniqueData[i+1] ? uniqueData[i+1].index - 1 : data.length
-        }) 
-    }
-
-    const response = await chapterWiseFilter(data, array, allQuestionData)
-      
-    return response
+  return response
 }
 
-const chapterWiseFilter = async(data, array, allQuestionData) => {
-    let datas = []
+const chapterWiseFilter = async (data, array, allQuestionData) => {
+  let datas = []
 
-    for(let i = 0; i < array.length; i++) {
+  for (let i = 0; i < array.length; i++) {
     // for(let i = 0; i < 1; i++) {
 
-        const chapter = array[i]
-        const chapter_no = chapter.data.split(".")[0]
+    const chapter = array[i]
+    const chapter_no = chapter.data.split(".")[0]
 
-        const filteredData = data.filter((item, index) => {
-            return item.index >= chapter.startIndex && item.index <= chapter.endIndex
-        })
+    const filteredData = data.filter((item, index) => {
+      return item.index >= chapter.startIndex && item.index <= chapter.endIndex
+    })
 
-        const matchedData = filteredData.filter(item => /^\d+\.\d+\.\d+\.\s/.test(item.data))
-        
-        const uniqueData = matchedData.filter((item, index) => {
-            return matchedData.findIndex((i) => i.data === item.data) === index;
-        });
-        
-        let qst = []
-        
-        for(let i = 0; i < uniqueData.length; i++) {
-        // for(let i = 0; i < 4; i++) {
-            const startIndex = uniqueData[i].index
-            const endIndex = uniqueData[i+1] ? uniqueData[i+1].index - 1 : data.length
-            const filterQuestion = filteredData.filter(item => item.index >= startIndex && item.index <= endIndex)
+    const matchedData = filteredData.filter(item => /^\d+\.\d+\.\d+\.\s/.test(item.data))
 
-            const piq = filterQuestion.find(item => item.data.includes("PIQ additional data"));
-            const hw = filterQuestion.find(item => item.data.includes("Hardware"))
-            const pr = filterQuestion.find(item => item.data.includes("Process"))
-            const hu = filterQuestion.find(item => item.data.includes("Human"))
-            const py = filterQuestion.find(item => item.data.includes("Operator uploaded photos"))
-            const questionSlice = piq ? piq.index -  startIndex : py ? py.index - startIndex : hw ? hw.index -  startIndex : pr ? pr.index -  startIndex : hu ? hu.index -  startIndex : filterQuestion.length
+    const uniqueData = matchedData.filter((item, index) => {
+      return matchedData.findIndex((i) => i.data === item.data) === index;
+    });
 
-            const question = filterQuestion.slice(0, questionSlice)
+    let qst = []
 
-            const matchQuestionFormat = question.filter(item => /^\d+\.\d+\.\d+\.\s/.test(item.data))
-            
-            const matchedIndex = matchQuestionFormat.length > 0 ? matchQuestionFormat[0].index : -1;
-            
-            const questionsAfterMatched = matchedIndex !== -1 ? question.slice(question.findIndex(item => item.index === matchedIndex)) : [];
-            
-            const numbers = questionsAfterMatched.map(item => item.data.match(/^\d+(\.\d+)+\./)?.[0] || "").filter(Boolean);
-            const viq = questionsAfterMatched.map(item => item.data.match(/^\d+(\.\d+)+/)?.[0] || "").filter(Boolean);            
-            const questions = questionsAfterMatched.map(item => item.data.replace(/^\d+(\.\d+)+\./, '').trim());
-            
-            const concatenatedNumbers = numbers.join(' ');
-            const concatenatedViq = viq.join(' ');
-            const concatenatedQuestions = questions.join(' ');
-            const currentQuestion = allQuestionData.find(e=> e.question_no === concatenatedViq);
+    for (let i = 0; i < uniqueData.length; i++) {
+      // for(let i = 0; i < 4; i++) {
+      const startIndex = uniqueData[i].index
+      const endIndex = uniqueData[i + 1] ? uniqueData[i + 1].index - 1 : data.length
+      const filterQuestion = filteredData.filter(item => item.index >= startIndex && item.index <= endIndex)
 
-            const hardwareNegatives = extractStandardCategoryNegatives(filterQuestion, 'Hardware', nocGrouped, negativeObsertions);
-            const processNegatives = extractStandardCategoryNegatives(filterQuestion, 'Process', nocGrouped, negativeObsertions);
-            const humanNegatives = extractValidHumanNegatives(filterQuestion, nocGrouped, negativeObsertions);
-            const humanPositives = extractValidHumanNegatives(filterQuestion, nocGrouped, positiveObsertions);
-            const photoNegatives = extractPhotoNocObservations(filterQuestion, nocGrouped);
-            const operatorComments = extractOperatorComments(filterQuestion);
-            const tmsaData = extractTMSA(filterQuestion)
-            // console.log("operatorComments",operatorComments)
-            let newData = {
-                chapter_no,
-                question_no: concatenatedNumbers,
-                tag: currentQuestion ? currentQuestion.tag : '',
-                question: concatenatedQuestions,
-                hardwareNegatives,
-                processNegatives,
-                humanNegatives,
-                humanPositives,
-                photoNegatives,
-                operatorComments,
-                tmsaData
-            }
-                        
-            if(hardwareNegatives.length > 0 || processNegatives.length > 0 || humanNegatives.length > 0 || humanPositives.length > 0 || photoNegatives.length > 0) {
-                qst.push(newData)
-            }
+      const piq = filterQuestion.find(item => item.data.includes("PIQ additional data"));
+      const hw = filterQuestion.find(item => item.data.includes("Hardware"))
+      const pr = filterQuestion.find(item => item.data.includes("Process"))
+      const hu = filterQuestion.find(item => item.data.includes("Human"))
+      const py = filterQuestion.find(item => item.data.includes("Operator uploaded photos"))
+      const questionSlice = piq ? piq.index - startIndex : py ? py.index - startIndex : hw ? hw.index - startIndex : pr ? pr.index - startIndex : hu ? hu.index - startIndex : filterQuestion.length
 
-        }
+      const question = filterQuestion.slice(0, questionSlice)
 
-        datas.push(...qst)
+      const matchQuestionFormat = question.filter(item => /^\d+\.\d+\.\d+\.\s/.test(item.data))
+
+      const matchedIndex = matchQuestionFormat.length > 0 ? matchQuestionFormat[0].index : -1;
+
+      const questionsAfterMatched = matchedIndex !== -1 ? question.slice(question.findIndex(item => item.index === matchedIndex)) : [];
+
+      const numbers = questionsAfterMatched.map(item => item.data.match(/^\d+(\.\d+)+\./)?.[0] || "").filter(Boolean);
+      const viq = questionsAfterMatched.map(item => item.data.match(/^\d+(\.\d+)+/)?.[0] || "").filter(Boolean);
+      const questions = questionsAfterMatched.map(item => item.data.replace(/^\d+(\.\d+)+\./, '').trim());
+
+      const concatenatedNumbers = numbers.join(' ');
+      const concatenatedViq = viq.join(' ');
+      const concatenatedQuestions = questions.join(' ');
+      const currentQuestion = allQuestionData.find(e => e.question_no === concatenatedViq);
+
+      const hardwareNegatives = extractStandardCategoryNegatives(filterQuestion, 'Hardware', nocGrouped, negativeObsertions);
+      const processNegatives = extractStandardCategoryNegatives(filterQuestion, 'Process', nocGrouped, negativeObsertions);
+      const humanNegatives = extractValidHumanNegatives(filterQuestion, nocGrouped, negativeObsertions);
+      const humanPositives = extractValidHumanNegatives(filterQuestion, nocGrouped, positiveObsertions);
+      const photoNegatives = extractPhotoNocObservations(filterQuestion, nocGrouped);
+      const operatorComments = extractOperatorComments(filterQuestion);
+      const tmsaData = extractTMSA(filterQuestion)
+      let newData = {
+        chapter_no,
+        question_no: concatenatedNumbers,
+        tag: currentQuestion ? currentQuestion.tag : '',
+        question: concatenatedQuestions,
+        hardwareNegatives,
+        processNegatives,
+        humanNegatives,
+        humanPositives,
+        photoNegatives,
+        operatorComments,
+        tmsaData
+      }
+
+      if (hardwareNegatives.length > 0 || processNegatives.length > 0 || humanNegatives.length > 0 || humanPositives.length > 0 || photoNegatives.length > 0) {
+        qst.push(newData)
+      }
+
     }
 
-    return datas
+    datas.push(...qst)
+  }
+
+  return datas
 
 }
-
-// function extractStandardCategoryNegatives(filterQuestion, category, nocGrouped, negativeObsertions) {
-//   const result = [];
-//   const baseNegatives = negativeObsertions[category] || [];
-//   const validNocs = nocGrouped[category] || [];
-//   const socSet = new Set((typeof socs !== 'undefined' ? socs : []).map(s => s.description.toLowerCase().trim()));
-
-//   let inSection = false;
-//   let sectionLines = [];
-
-//   for (let i = 0; i <= filterQuestion.length; i++) {
-//     const line = i < filterQuestion.length ? filterQuestion[i].data.trim() : '';
-//     const lower = line.toLowerCase();
-
-//     const isSectionStart = lower.startsWith("hardware") || lower.startsWith("process") || lower.startsWith("human") || lower.startsWith("photograph")
-
-//     if (isSectionStart || i === filterQuestion.length) {
-//       if (inSection) {
-//         const sectionText = sectionLines.join(' ').replace(/\s+/g, ' ').trim();
-//         let lowerText = sectionText.toLowerCase();
-//         let remarkFind = sectionText
-
-//         baseNegatives.forEach((neg) => {
-//           if (!lowerText.includes(neg.toLowerCase())) return;
-
-//           validNocs.forEach(noc => {
-//             const pattern = new RegExp(`((?:[a-z0-9\\s&\\-\\/]+):\\s*)?${noc.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}`, 'i');
-//             let match;
-//             while ((match = pattern.exec(lowerText)) !== null) {
-//               const soc = match[1] ? match[1].trim().replace(/:$/, '') : null;
-//               const nocIndex = match.index + match[0].length;
-//               let afterNoc = lowerText.slice(nocIndex);
-//               // let afterNoc = remarkFind.slice(nocIndex);
-//               const opIndex = afterNoc.indexOf("operator comments");
-//               const remark = (opIndex !== -1 ? afterNoc.slice(0, opIndex) : afterNoc).trim();
-
-//               let matchedSoc = null;
-//               if (soc && socSet.has(soc.toLowerCase())) {
-//                   const original = (socs || []).find(s => s.description.toLowerCase() === soc.toLowerCase());
-//                   matchedSoc = original ? original.description : soc;
-//                 // matchedSoc = soc;
-//               } else {
-//                 // const fallback = Array.from(socSet).filter(s => lowerText.includes(s));
-//                 const fallback = (typeof socs !== 'undefined' ? socs : [])
-//                                 .filter(s => lowerText.includes(s.description.toLowerCase()))
-//                                 .sort((a, b) => b.description.length - a.description.length)
-//                                 // .reverse();
-
-//                 if (fallback.length > 0) {
-//                   // fallback.sort((a, b) => b.length - a.length);
-//                   // matchedSoc = fallback[0];
-//                   matchedSoc = fallback[0].description;
-
-//                 }
-//               }
-
-//               result.push({
-//                 negative: neg,
-//                 soc: matchedSoc,
-//                 noc,
-//                 remark
-//               });
-
-//               lowerText = lowerText.slice(nocIndex); // move to next possible NOC
-//             }
-//           });
-//         });
-//       }
-
-//       inSection = lower.startsWith(category.toLowerCase());
-//       sectionLines = inSection ? [line] : [];
-//     } else if (inSection) {
-//       sectionLines.push(line);
-//     }
-//   }
-
-//   return result;
-// }
 
 function extractStandardCategoryNegatives(filterQuestion, category, nocGrouped, negativeObsertions) {
   const result = [];
@@ -635,97 +555,96 @@ function extractStandardCategoryNegatives(filterQuestion, category, nocGrouped, 
   return result;
 }
 
-
 function extractValidHumanNegatives(filterQuestion, nocGrouped, negativeObsertions) {
-    const result = [];
-    
-    for (let i = 0; i < filterQuestion.length; i++) {
-        const currentLine = filterQuestion[i].data.trim();
+  const result = [];
 
-        if (!currentLine.toLowerCase().startsWith("human")) continue;
+  for (let i = 0; i < filterQuestion.length; i++) {
+    const currentLine = filterQuestion[i].data.trim();
 
-        let soc = '';
-        let negative = '';
-        let matchedNegative = null;
+    if (!currentLine.toLowerCase().startsWith("human")) continue;
 
-        // Extract SOC and negative from the Human line
-        if (currentLine.includes(':')) {
-            const [socPart, negativePartRaw] = currentLine.split(':').map(s => s.trim());
-            soc = socPart.replace(/^Human\s*/i, '').replace(/\(.*?\)/g, '').trim();
-            const cleanedNegative = negativePartRaw.replace(/\(.*?\)/g, '').trim();
-            matchedNegative = negativeObsertions["Human"].find(neg =>
-                cleanedNegative.toLowerCase().includes(neg.toLowerCase())
-            );
-            if (matchedNegative) negative = matchedNegative;
-        } else {
-            const withoutPrefix = currentLine.replace(/^Human\s*/i, '').replace(/\(.*?\)/g, '').trim();
-            matchedNegative = negativeObsertions["Human"].find(neg =>
-                withoutPrefix.toLowerCase().includes(neg.toLowerCase())
-            );
-            if (matchedNegative) {
-                negative = matchedNegative;
-                soc = withoutPrefix.split(matchedNegative)[0].trim();
-            }
-        }
+    let soc = '';
+    let negative = '';
+    let matchedNegative = null;
 
-        if (!matchedNegative) continue;
-
-        let remarkLines = [];
-        let nocs = []; // Store all found NOCs
-        
-        for (let j = i + 1; j < filterQuestion.length; j++) {
-            const nextData = filterQuestion[j].data.trim();
-            const lower = nextData.toLowerCase();
-
-            if (lower.startsWith("human")) break;
-            if (lower === "operator comments") break;
-
-            // Check if line contains any NOC from nocGrouped["Human"]
-            const matchedNoc = nocGrouped["Human"].find(nocOption => {
-                const nocPattern = new RegExp(`^\\d*\\.?\\s*${escapeRegExp(nocOption)}`, 'i');
-                return nocPattern.test(nextData);
-            });
-
-            if (matchedNoc) {
-                const nocPattern = new RegExp(`^(\\d+\\.\\s*)?${escapeRegExp(matchedNoc)}`, 'i');
-                const match = nextData.match(nocPattern);
-                if (match) {
-                    nocs.push(match[0].trim());
-                }
-                continue; // don't add NOC line to remarks
-            }
-
-            if (nextData !== '') {
-                remarkLines.push(nextData);
-            }
-        }
-
-        // Create entries for all found NOCs
-        if (nocs.length > 0) {
-            nocs.forEach(noc => {
-                result.push({
-                    soc,
-                    negative,
-                    remark: remarkLines.join(' ').trim(),
-                    noc
-                });
-            });
-        } else {
-            // Fallback if no NOCs found
-            result.push({
-                soc,
-                negative,
-                remark: remarkLines.join(' ').trim(),
-                noc: soc // use SOC as fallback
-            });
-        }
+    // Extract SOC and negative from the Human line
+    if (currentLine.includes(':')) {
+      const [socPart, negativePartRaw] = currentLine.split(':').map(s => s.trim());
+      soc = socPart.replace(/^Human\s*/i, '').replace(/\(.*?\)/g, '').trim();
+      const cleanedNegative = negativePartRaw.replace(/\(.*?\)/g, '').trim();
+      matchedNegative = negativeObsertions["Human"].find(neg =>
+        cleanedNegative.toLowerCase().includes(neg.toLowerCase())
+      );
+      if (matchedNegative) negative = matchedNegative;
+    } else {
+      const withoutPrefix = currentLine.replace(/^Human\s*/i, '').replace(/\(.*?\)/g, '').trim();
+      matchedNegative = negativeObsertions["Human"].find(neg =>
+        withoutPrefix.toLowerCase().includes(neg.toLowerCase())
+      );
+      if (matchedNegative) {
+        negative = matchedNegative;
+        soc = withoutPrefix.split(matchedNegative)[0].trim();
+      }
     }
 
-    return result;
+    if (!matchedNegative) continue;
+
+    let remarkLines = [];
+    let nocs = []; // Store all found NOCs
+
+    for (let j = i + 1; j < filterQuestion.length; j++) {
+      const nextData = filterQuestion[j].data.trim();
+      const lower = nextData.toLowerCase();
+
+      if (lower.startsWith("human")) break;
+      if (lower === "operator comments") break;
+
+      // Check if line contains any NOC from nocGrouped["Human"]
+      const matchedNoc = nocGrouped["Human"].find(nocOption => {
+        const nocPattern = new RegExp(`^\\d*\\.?\\s*${escapeRegExp(nocOption)}`, 'i');
+        return nocPattern.test(nextData);
+      });
+
+      if (matchedNoc) {
+        const nocPattern = new RegExp(`^(\\d+\\.\\s*)?${escapeRegExp(matchedNoc)}`, 'i');
+        const match = nextData.match(nocPattern);
+        if (match) {
+          nocs.push(match[0].trim());
+        }
+        continue; // don't add NOC line to remarks
+      }
+
+      if (nextData !== '') {
+        remarkLines.push(nextData);
+      }
+    }
+
+    // Create entries for all found NOCs
+    if (nocs.length > 0) {
+      nocs.forEach(noc => {
+        result.push({
+          soc,
+          negative,
+          remark: remarkLines.join(' ').trim(),
+          noc
+        });
+      });
+    } else {
+      // Fallback if no NOCs found
+      result.push({
+        soc,
+        negative,
+        remark: remarkLines.join(' ').trim(),
+        noc: soc // use SOC as fallback
+      });
+    }
+  }
+
+  return result;
 }
 
 function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function extractPhotoNocObservations(filterQuestion, nocGrouped) {
@@ -740,7 +659,7 @@ function extractPhotoNocObservations(filterQuestion, nocGrouped) {
     let matchedLine = null;
 
     if (currentLine.toLowerCase().startsWith(category.toLowerCase())) {
-        matchedLine = currentLine;
+      matchedLine = currentLine;
     }
 
     if (!currentLine.toLowerCase().startsWith(category.toLowerCase())) continue;
@@ -753,8 +672,8 @@ function extractPhotoNocObservations(filterQuestion, nocGrouped) {
     if (nocPartRaw) {
       for (const phrase of baseNegatives) {
         if (matchedLine.includes(phrase.toLowerCase())) {
-            matchedNegative = phrase;
-            break;
+          matchedNegative = phrase;
+          break;
         }
       }
       matchedNoc = validNOCs.find(valid =>
@@ -794,33 +713,32 @@ function extractPhotoNocObservations(filterQuestion, nocGrouped) {
   return result;
 }
 
-
 const exportToExcel = async (req, res) => {
-  const { questions, vesselName, inspectionDate} = req.body;
+  const { questions, vesselName, inspectionDate } = req.body;
 
   const workbook = new ExcelJS.Workbook();
-  
+
   // Create Summary worksheet first
   const summaryWorksheet = workbook.addWorksheet('Summary');
-  
+
   // Initialize totals with tag-based breakdown
   let totals = {
-    hardware: { 
+    hardware: {
       core: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       rotational: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       total: { negative: 0, soc: 0, noc: 0, totalScore: 0 }
     },
-    process: { 
+    process: {
       core: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       rotational: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       total: { negative: 0, soc: 0, noc: 0, totalScore: 0 }
     },
-    human: { 
+    human: {
       core: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       rotational: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       total: { negative: 0, soc: 0, noc: 0, totalScore: 0 }
     },
-    photo: { 
+    photo: {
       core: { negative: 0, soc: 0, noc: 0, totalScore: 0 },
       // Remove rotational for photo as there are no rotational photo questions
       total: { negative: 0, soc: 0, noc: 0, totalScore: 0 }
@@ -838,7 +756,7 @@ const exportToExcel = async (req, res) => {
   for (const item of questions) {
     const questionTag = item.tag || 'Core';
     const tagGroup = getTagGroup(questionTag);
-    
+
     const hardwareList = Array.isArray(item.hardwareNegatives) ? item.hardwareNegatives : [];
     const processList = Array.isArray(item.processNegatives) ? item.processNegatives : [];
     const humanList = Array.isArray(item.humanNegatives) ? item.humanNegatives : [];
@@ -850,12 +768,12 @@ const exportToExcel = async (req, res) => {
       const soc = parseInt(hw.soc) || 0;
       const noc = parseInt(hw.noc) || 0;
       const score = parseFloat(hw.score) || 0;
-      
+
       totals.hardware[tagGroup].negative += negative;
       totals.hardware[tagGroup].soc += soc;
       totals.hardware[tagGroup].noc += noc;
       totals.hardware[tagGroup].totalScore += score;
-      
+
       totals.hardware.total.negative += negative;
       totals.hardware.total.soc += soc;
       totals.hardware.total.noc += noc;
@@ -868,12 +786,12 @@ const exportToExcel = async (req, res) => {
       const soc = parseInt(pr.soc) || 0;
       const noc = parseInt(pr.noc) || 0;
       const score = parseFloat(pr.score) || 0;
-      
+
       totals.process[tagGroup].negative += negative;
       totals.process[tagGroup].soc += soc;
       totals.process[tagGroup].noc += noc;
       totals.process[tagGroup].totalScore += score;
-      
+
       totals.process.total.negative += negative;
       totals.process.total.soc += soc;
       totals.process.total.noc += noc;
@@ -886,12 +804,12 @@ const exportToExcel = async (req, res) => {
       const soc = parseInt(hm.soc) || 0;
       const noc = parseInt(hm.noc) || 0;
       const score = parseFloat(hm.score) || 0;
-      
+
       totals.human[tagGroup].negative += negative;
       totals.human[tagGroup].soc += soc;
       totals.human[tagGroup].noc += noc;
       totals.human[tagGroup].totalScore += score;
-      
+
       totals.human.total.negative += negative;
       totals.human.total.soc += soc;
       totals.human.total.noc += noc;
@@ -904,13 +822,13 @@ const exportToExcel = async (req, res) => {
       const soc = parseInt(ph.soc) || 0;
       const noc = parseInt(ph.noc) || 0;
       const score = parseFloat(ph.score) || 0;
-      
+
       // Only add to core for photos (no rotational photo questions)
       totals.photo.core.negative += negative;
       totals.photo.core.soc += soc;
       totals.photo.core.noc += noc;
       totals.photo.core.totalScore += score;
-      
+
       totals.photo.total.negative += negative;
       totals.photo.total.soc += soc;
       totals.photo.total.noc += noc;
@@ -934,7 +852,7 @@ const exportToExcel = async (req, res) => {
   titleCell.value = `Vessel: ${vesselName || 'N/A'}`;
   titleCell.font = { bold: true, size: 16 };
   titleCell.alignment = { horizontal: 'center' };
-  
+
   // Add inspection date under title
   summaryWorksheet.mergeCells('A2:F2');
   const dateCell = summaryWorksheet.getCell('A2');
@@ -954,8 +872,8 @@ const exportToExcel = async (req, res) => {
 
   // Add headers for simplified table
   const simpleHeaderRow = summaryWorksheet.addRow([
-    'Total Core Severity score', 
-    'Total Rotational Severity score', 
+    'Total Core Severity score',
+    'Total Rotational Severity score',
     'Total Severity Score '
   ], 5); // Row 5
 
@@ -982,14 +900,14 @@ const exportToExcel = async (req, res) => {
   summaryWorksheet.getColumn(3).width = 30;
 
   // Calculate totals (photo only has core, no rotational)
-  const totalCoreScore = (totals.hardware.core.totalScore + 
-                         totals.process.core.totalScore + 
-                         totals.human.core.totalScore + 
-                         totals.photo.core.totalScore).toFixed(2);
+  const totalCoreScore = (totals.hardware.core.totalScore +
+    totals.process.core.totalScore +
+    totals.human.core.totalScore +
+    totals.photo.core.totalScore).toFixed(2);
 
-  const totalRotationalScore = (totals.hardware.rotational.totalScore + 
-                               totals.process.rotational.totalScore + 
-                               totals.human.rotational.totalScore).toFixed(2); // No photo rotational
+  const totalRotationalScore = (totals.hardware.rotational.totalScore +
+    totals.process.rotational.totalScore +
+    totals.human.rotational.totalScore).toFixed(2); // No photo rotational
 
   const combinedTotalScore = (parseFloat(totalCoreScore) + parseFloat(totalRotationalScore)).toFixed(2);
 
@@ -1045,17 +963,17 @@ const exportToExcel = async (req, res) => {
     { category: 'Hardware', tag: 'Core', ...totals.hardware.core },
     { category: 'Hardware', tag: 'Rotational', ...totals.hardware.rotational },
     { category: 'Hardware', tag: 'Total', ...totals.hardware.total },
-    
+
     // Process rows  
     { category: 'Process', tag: 'Core', ...totals.process.core },
     { category: 'Process', tag: 'Rotational', ...totals.process.rotational },
     { category: 'Process', tag: 'Total', ...totals.process.total },
-    
+
     // Human rows
     { category: 'Human', tag: 'Core', ...totals.human.core },
     { category: 'Human', tag: 'Rotational', ...totals.human.rotational },
     { category: 'Human', tag: 'Total', ...totals.human.total },
-    
+
     // Photo rows (only core and total, no rotational)
     { category: 'Photo', tag: 'Core', ...totals.photo.core },
     { category: 'Photo', tag: 'Total', ...totals.photo.total }
@@ -1080,7 +998,7 @@ const exportToExcel = async (req, res) => {
         bottom: { style: 'thin' },
         right: { style: 'thin' }
       };
-      
+
       // Highlight total rows
       if (data.tag === 'Total') {
         cell.fill = {
@@ -1125,7 +1043,7 @@ const exportToExcel = async (req, res) => {
   // Helper function to create category worksheets with proper data filtering
   const createCategoryWorksheet = (workbook, categoryName, categoryKey, questions) => {
     const worksheet = workbook.addWorksheet(categoryName);
-    
+
     const headerRow = [
       "VIQ NO.",
       "Question",
@@ -1133,7 +1051,7 @@ const exportToExcel = async (req, res) => {
       "Inspector Remark",
       `${categoryName} Negative Response`,
       `${categoryName} SOC`,
-      `${categoryName} NOC`, 
+      `${categoryName} NOC`,
       `${categoryName} Severity Score`
     ];
 
@@ -1166,7 +1084,7 @@ const exportToExcel = async (req, res) => {
     // Add data rows - only for questions that have data for this specific category
     for (const item of questions) {
       const categoryList = Array.isArray(item[categoryKey]) ? item[categoryKey] : [];
-      
+
       // Only add rows if this category has data for this question
       if (categoryList.length > 0) {
         hasData = true;
@@ -1186,7 +1104,7 @@ const exportToExcel = async (req, res) => {
           // Apply styling
           dataRow.eachCell((cell, colNumber) => {
             cell.alignment = { vertical: 'top', wrapText: true };
-            
+
             // Remark column styling (column 4)
             if (colNumber === 4) {
               cell.font = { color: { argb: 'FF0000' } };
@@ -1201,7 +1119,7 @@ const exportToExcel = async (req, res) => {
       const noDataRow = worksheet.addRow(['', 'No data available for this category', '', '', '', '', '', '']);
       noDataRow.getCell(2).font = { italic: true, color: { argb: 'FF666666' } };
       noDataRow.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
-      
+
       // Merge cells for the message
       worksheet.mergeCells(`B${noDataRow.number}:H${noDataRow.number}`);
     }
@@ -1218,7 +1136,7 @@ const exportToExcel = async (req, res) => {
   const filepath = path.join(outputPath, fileName);
 
   await workbook.xlsx.writeFile(filepath);
-  
+
   res.status(200).json({
     message: "Excel file created successfully",
     success: true,
@@ -1227,271 +1145,403 @@ const exportToExcel = async (req, res) => {
 };
 
 function formatVesselName(name) {
-    return name.toLowerCase().replace(/\s+/g, '_');
+  return name.toLowerCase().replace(/\s+/g, '_');
 }
+
+const norm = (s) =>
+  (s || "")
+    .replace(/<[^>]*>/g, "")      // strip HTML
+    .replace(/\u00A0/g, " ")      // NBSP
+    .replace(/[’‘]/g, "'")        // curly apostrophes -> '
+    .replace(/[“”]/g, '"')        // curly quotes -> "
+    .replace(/[–—]/g, "-")        // en/em dash -> hyphen
+    .replace(/\s+/g, " ")         // collapse spaces
+    .trim()
+    .toLowerCase();
+
+// true if line equals ANY noc item (exact, after normalization)
+const isNocLine = (line) => {
+  const nline = norm(line);
+  for (const items of Object.values(nocGrouped)) {
+    for (const item of items) {
+      if (norm(item) === nline) return true;
+    }
+  }
+  return false;
+};
 
 function extractOperatorComments(filterQuestion) {
   const operatorComments = [];
   const pifData = [];
+
+  // -------- state --------
   let currentPIF = "";
   let inOperatorSection = false;
   let currentComment = {};
   let currentField = "";
   let fieldContent = "";
   let currentCategory = "";
-  let categoryBeforeOperatorComments = ""; // Track the category that had operator comments
-  
-  // DEBUG: Add logging to track what's happening
-  console.log("=== DEBUGGING EXTRACTION ===");
-  
+  let categoryBeforeOperatorComments = "";
+  let rootCauseItems = []; // collect multiple root-cause parts
+
+  // -------- helpers / regex --------
+  const SECTION_RE = /^(hardware|process|human|photograph)/i;
+  const IMMEDIATE_CAUSE_RE = /^(?:\d+[.)-]|\u2022|\*|-)?\s*immediate\s*cause\s*[:\-]?\s*(.*)$/i;
+  const ROOT_CAUSE_RE = /^(?:\d+[.)-]|\u2022|\*|-)?\s*root\s*cause(?:s|\(s\))?(?:\s*analysis)?\s*[:\-]?\s*(.*)$/i;
+  const CORRECTIVE_ACTION_RE = /^(?:\d+[.)-]|\u2022|\*|-)?\s*(corrective|correction)\s*action\s*[:\-]?\s*(.*)$/i;
+  const PREVENTIVE_ACTION_RE = /^(?:\d+[.)-]|\u2022|\*|-)?\s*prevent(?:ive|ative)\s*action\s*[:\-]?\s*(.*)$/i;
+  const BULLET_RE = /^(?:\d+[.)-]|\u2022|\*|-)\s+(.*)$/;
+
+  const lower = s => (s || "").toLowerCase();
+  const clean = s => (s || "").trim();
+
+  const commitField = () => {
+    const val = clean(fieldContent);
+    if (!currentField || !val) { currentField = ""; fieldContent = ""; return; }
+
+    if (currentField === "rootCause") {
+      rootCauseItems.push(val);
+      currentComment.rootCause = rootCauseItems.join("\n- ");
+    } else {
+      currentComment[currentField] = val;
+    }
+    currentField = "";
+    fieldContent = "";
+  };
+
+  const pushCurrentComment = () => {
+    // finalize any pending field
+    commitField();
+    // finalize rootCause even if last item came via bullets (no buffer)
+    if (rootCauseItems.length && !currentComment.rootCause) {
+      currentComment.rootCause = rootCauseItems.join("\n- ");
+    }
+    if (Object.keys(currentComment).length > 0) {
+      currentComment.category = categoryBeforeOperatorComments || currentCategory || currentComment.category || "";
+      operatorComments.push({ ...currentComment });
+    }
+    // reset comment state (keep categoryBeforeOperatorComments sticky)
+    currentComment = {};
+    currentField = "";
+    fieldContent = "";
+    rootCauseItems = [];
+  };
+
   for (let i = 0; i < filterQuestion.length; i++) {
-    const line = filterQuestion[i].data.trim();
-    
+    const line = clean(filterQuestion[i].data);
     if (!line) continue;
 
-    // Detect and update current category from section headers
-    const lowerLine = line.toLowerCase();
-    if (lowerLine.startsWith("hardware")) {
-      currentCategory = "hardware";
-      console.log(`📂 CATEGORY SET TO: ${currentCategory}`);
-    } else if (lowerLine.startsWith("process")) {
-      currentCategory = "process";
-      console.log(`📂 CATEGORY SET TO: ${currentCategory}`);
-    } else if (lowerLine.startsWith("human")) {
-      currentCategory = "human";
-      console.log(`📂 CATEGORY SET TO: ${currentCategory}`);
-    } else if (lowerLine.startsWith("photograph")) {
-      currentCategory = "photo";
-      console.log(`📂 CATEGORY SET TO: ${currentCategory}`);
+    // section headers -> update category (even outside operator block)
+    if (SECTION_RE.test(line)) {
+      const l = lower(line);
+      if (l.startsWith("hardware")) currentCategory = "hardware";
+      else if (l.startsWith("process")) currentCategory = "process";
+      else if (l.startsWith("human")) currentCategory = "human";
+      else if (l.startsWith("photograph")) currentCategory = "photo";
     }
-    
-    // Detect start of Operator Comments section FIRST (highest priority)
-    if (line.toLowerCase().includes("operator comments")) {
-      console.log(`🟡 ENTERING OPERATOR SECTION at line: "${line}" - Current category: ${currentCategory}`);
-      
-      // IMPORTANT: Save the category that this operator comment belongs to
-      categoryBeforeOperatorComments = currentCategory;
-      
-      // Save current comment if exists
+
+    // ---- start Operator Comments (keep simple trigger like your original) ----
+    if (lower(line).includes("operator comments")) {
+      // remember category at the moment of header
+      categoryBeforeOperatorComments = currentCategory || categoryBeforeOperatorComments || "";
+
+      // push any pending comment (outside→inside transition)
       if (currentComment && Object.keys(currentComment).length > 0) {
-        operatorComments.push({...currentComment});
+        pushCurrentComment();
       }
-      
-      // Save the PIF that this operator comment belongs to
+
+      // tie current PIF to list (if any) before entering operator block
       if (currentPIF && isValidPIF(currentPIF)) {
-        console.log(`📝 SAVING PIF WITH OPERATOR COMMENTS: "${currentPIF}"`);
         pifData.push({
           pifNumber: currentPIF.match(/^\d+/)?.[0] || "",
-          pifDescription: currentPIF.replace(/^\d+\.\s*/, '').trim()
+          pifDescription: currentPIF.replace(/^\d+\.\s*/, "").trim()
         });
       }
-      
+
       inOperatorSection = true;
-      currentComment = {};
+      currentComment = {};         // new comment
       currentField = "";
       fieldContent = "";
-      currentPIF = ""; // Clear current PIF since we're processing its operator comments
+      rootCauseItems = [];         // reset collector
+      currentPIF = "";             // clear PIF
       continue;
     }
-    
-    // If we're inside operator section, handle operator content
+
+    // ===================== inside Operator Comments =====================
+    // if (inOperatorSection) {
+
+    //   const startsHeader = (line) => /^\s*(?:hardware|process|human)\b/i.test(line);
+
+    //   // boundaries to end: attachments (your original), OR you can add more later
+    //   if (lower(line).includes("operator attachments") || startsHeader(line) || isNocLine(line)) {
+    //     pushCurrentComment();
+    //     inOperatorSection = false;
+
+    //     // If this very line also indicates a new section, update category (already done above)
+    //     // If it's a PIF (you had it commented; keep same behavior)
+    //     if (isValidPIF(line)) currentPIF = line;
+    //     continue;
+    //   }
+
+    //   // author/date
+    //   const authorMatch = line.match(/(\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2})\s+by\s+(.+)/i);
+    //   if (authorMatch) {
+    //     currentComment.date = authorMatch[1];
+    //     currentComment.name = authorMatch[2];
+    //     continue;
+    //   }
+
+    //   // ignore inner "2023. ..." numbers that are not a PIF
+    //   if (/^\d+\.\s+/.test(line) && !isValidPIF(line)) {
+    //     if (currentField) fieldContent += " " + line;
+    //     else currentComment.notes = (currentComment.notes ? currentComment.notes + " " : "") + line;
+    //     continue;
+    //   }
+
+    //   // ---- field headers (commit previous first) ----
+    //   let m;
+    //   if ((m = line.match(IMMEDIATE_CAUSE_RE))) {
+    //     commitField();
+    //     currentField = "immediateCause";
+    //     fieldContent = clean(m[1]);
+    //     continue;
+    //   }
+
+    //   if ((m = line.match(ROOT_CAUSE_RE))) {
+    //     // starting a new root-cause header
+    //     commitField(); // flush whatever was before
+    //     const txt = clean(m[1]);
+    //     if (txt) {
+    //       rootCauseItems.push(txt);
+    //       currentComment.rootCause = rootCauseItems.join("\n- ");
+    //       currentField = "";        // no open buffer; that item was finalized
+    //       fieldContent = "";
+    //     } else {
+    //       currentField = "rootCause";
+    //       fieldContent = "";        // expect following lines to be content
+    //     }
+    //     continue;
+    //   }
+
+    //   if ((m = line.match(CORRECTIVE_ACTION_RE))) {
+    //     commitField();
+    //     currentField = "correctiveAction";
+    //     fieldContent = clean(m[2]);
+    //     continue;
+    //   }
+
+    //   if ((m = line.match(PREVENTIVE_ACTION_RE))) {
+    //     commitField();
+    //     currentField = "preventativeAction";
+    //     fieldContent = clean(m[1]);
+    //     continue;
+    //   }
+
+    //   // bullets/numbers inside root cause -> treat as separate items
+    //   if (currentField === "rootCause") {
+    //     const bm = line.match(BULLET_RE);
+    //     if (bm) {
+    //       if (clean(fieldContent)) {
+    //         rootCauseItems.push(clean(fieldContent)); // push the previous chunk
+    //         fieldContent = "";
+    //       }
+    //       rootCauseItems.push(clean(bm[1]));
+    //       currentComment.rootCause = rootCauseItems.join("\n- ");
+    //       continue;
+    //     }
+    //   }
+
+    //   // accumulate content
+    //   if (currentField) {
+    //     fieldContent += (fieldContent ? " " : "") + line;
+    //   } else {
+    //     currentComment.notes = (currentComment.notes ? currentComment.notes + " " : "") + line;
+    //   }
+
+    //   continue; // stay inside operator section
+    // }
+
     if (inOperatorSection) {
-      console.log(`🔴 PROCESSING OPERATOR CONTENT: "${line}"`);
-      
-      // Check for section end - structural patterns OR new PIF
-      if (line.toLowerCase().match(/^(human|process|hardware|photograph)/) || 
-         line.match(/^\d+\.\d+(\.\d+)?\s*-/) ||
-         line.match(/^\d+\.\d+(\.\d+)?\.\s+\w/) ||
-         line.toLowerCase().includes("operator attachments") ||
-         isValidPIF(line)) {  // NEW PIF also ends operator section
-        
-        console.log(`🟢 EXITING OPERATOR SECTION at line: "${line}" - Assigning category: ${categoryBeforeOperatorComments}`);
-        // Save current field content
+      const startsHeader = (line) => /^\s*(?:hardware|process|human)\b/i.test(line);
+      const shouldEnd =
+        lower(line).includes("operator attachments") ||
+        (currentField === "preventativeAction" && (startsHeader(line) || isNocLine(line)));
+
+      if (shouldEnd) {
+        // flush active field into the comment
         if (currentField && fieldContent) {
           currentComment[currentField] = fieldContent.trim();
         }
-        // Save current comment with the CORRECT category
+
+        // push the built operator comment (if any)
         if (Object.keys(currentComment).length > 0) {
-          currentComment.category = categoryBeforeOperatorComments; // Use the category before operator comments
-          operatorComments.push({...currentComment});
+          currentComment.category = categoryBeforeOperatorComments || currentCategory || "";
+          operatorComments.push({ ...currentComment });
         }
-        
+
+        // close operator section
         inOperatorSection = false;
         currentComment = {};
         currentField = "";
         fieldContent = "";
-        categoryBeforeOperatorComments = ""; // Reset
-        
-        // Update current category if this line is a new section header
-        if (line.toLowerCase().startsWith("hardware")) {
-          currentCategory = "hardware";
-        } else if (line.toLowerCase().startsWith("process")) {
-          currentCategory = "process";
-        } else if (line.toLowerCase().startsWith("human")) {
-          currentCategory = "human";
-        } else if (line.toLowerCase().startsWith("photograph")) {
-          currentCategory = "photo";
-        }
-        
-        // If this line is a new PIF, start processing it
-        if (isValidPIF(line)) {
-          console.log(`🔵 NEW PIF AFTER OPERATOR SECTION: "${line}"`);
-          currentPIF = line;
-        }
-        continue;
+
+        // optional: if this same line is a new PIF header, capture it
+        if (isValidPIF(line)) currentPIF = line;
+
+        continue; // done handling this line
       }
-      
-      // Extract author and date
-      const authorMatch = line.match(/(\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2})\s+by\s+(.+)/i);
-      if (authorMatch) {
-        currentComment.date = authorMatch[1];
-        currentComment.name = authorMatch[2];
-        continue;
+
+  // ---- author/date (e.g., "11 Nov 2024 12:03 by Captain ...")
+  const authorMatch = line.match(/(\d{2}\s+\w{3}\s+\d{4}\s+\d{2}:\d{2})\s+by\s+(.+)/i);
+  if (authorMatch) {
+    currentComment.date = authorMatch[1];
+    currentComment.name = authorMatch[2];
+    continue;
+  }
+
+  // ---- ignore PIF-like numbering inside operator text
+  if (/^\d+\.\s+/.test(line) && !isValidPIF(line)) {
+    if (currentField) {
+      fieldContent += " " + line;
+    } else {
+      currentComment.notes = (currentComment.notes ? currentComment.notes + " " : "") + line;
+    }
+    continue;
+  }
+
+  // ---- field headers (commit previous field first)
+  let m;
+
+  if ((m = line.match(IMMEDIATE_CAUSE_RE))) {
+    commitField();
+    currentField = "immediateCause";
+    fieldContent = clean(m[1]);
+    continue;
+  }
+
+  if ((m = line.match(ROOT_CAUSE_RE))) {
+    commitField();
+    const txt = clean(m[1]);
+    if (txt) {
+      // header with inline text -> push as an item immediately
+      rootCauseItems.push(txt);
+      currentComment.rootCause = rootCauseItems.join("\n- ");
+      currentField = "";
+      fieldContent = "";
+    } else {
+      // header only; expect following lines to belong to rootCause
+      currentField = "rootCause";
+      fieldContent = "";
+    }
+    continue;
+  }
+
+  if ((m = line.match(CORRECTIVE_ACTION_RE))) {
+    commitField();
+    currentField = "correctiveAction";
+    fieldContent = clean(m[2]);
+    continue;
+  }
+
+  if ((m = line.match(PREVENTIVE_ACTION_RE))) {
+    commitField();
+    currentField = "preventativeAction";
+    fieldContent = clean(m[1]);
+    continue;
+  }
+
+  // ---- bullets/numbers inside rootCause -> treat as separate items
+  if (currentField === "rootCause") {
+    const bm = line.match(BULLET_RE);
+    if (bm) {
+      if (clean(fieldContent)) {
+        rootCauseItems.push(clean(fieldContent)); // push any buffered text as an item
+        fieldContent = "";
       }
-      
-      // COMPLETELY IGNORE any line that looks like a PIF inside operator comments
-      // (this handles cases like "2023. Company..." inside operator text)
-      if (line.match(/^\d+\.\s+/) && !isValidPIF(line)) {
-        console.log(`⚠️ IGNORING INVALID PIF-LIKE PATTERN INSIDE OPERATOR COMMENTS: "${line}"`);
-        // Treat it as regular operator comment content
-        if (currentField) {
-          fieldContent += " " + line;
-        }
-        continue;
-      }
-      
-      // Check for field headers
-      if (line.toLowerCase().startsWith("immediate cause")) {
-        if (currentField && fieldContent) {
-          currentComment[currentField] = fieldContent.trim();
-        }
-        currentField = "immediateCause";
-        fieldContent = line.replace(/immediate cause\s*:?\s*/i, '').trim();
-        continue;
-      }
-      
-      if (line.toLowerCase().startsWith("root cause")) {
-        if (currentField && fieldContent) {
-          currentComment[currentField] = fieldContent.trim();
-        }
-        currentField = "rootCause";
-        fieldContent = line.replace(/root cause\s*:?\s*/i, '').trim();
-        continue;
-      }
-      
-      if (line.toLowerCase().startsWith("corrective action")) {
-        if (currentField && fieldContent) {
-          currentComment[currentField] = fieldContent.trim();
-        }
-        currentField = "correctiveAction";
-        fieldContent = line.replace(/corrective action\s*:?\s*/i, '').trim();
-        continue;
-      }
-      
-      if (line.toLowerCase().startsWith("preventative action")) {
-        if (currentField && fieldContent) {
-          currentComment[currentField] = fieldContent.trim();
-        }
-        currentField = "preventativeAction";
-        fieldContent = line.replace(/preventative action\s*:?\s*/i, '').trim();
-        continue;
-      }
-      
-      // Add content to current field
-      if (currentField) {
-        fieldContent += " " + line;
-      }
-      
-      // SKIP everything else when in operator section - no PIF processing
+      rootCauseItems.push(clean(bm[1]));
+      currentComment.rootCause = rootCauseItems.join("\n- ");
       continue;
     }
-    
-    // Process PIFs when NOT in operator section
+  }
+
+  // ---- accumulate plain content
+  if (currentField) {
+    fieldContent += (fieldContent ? " " : "") + line;
+  } else {
+    currentComment.notes = (currentComment.notes ? currentComment.notes + " " : "") + line;
+  }
+
+  continue; // stay inside operator section
+}
+
+
+    // ===================== outside Operator Comments =====================
     if (!inOperatorSection && isValidPIF(line)) {
-      console.log(`🔵 FOUND PIF: "${line}"`);
-      // Save previous PIF if it exists (this handles positive PIFs without operator comments)
+      // save previous PIF if any
       if (currentPIF && isValidPIF(currentPIF)) {
-        console.log(`📝 SAVING PREVIOUS PIF (POSITIVE): "${currentPIF}"`);
         pifData.push({
           pifNumber: currentPIF.match(/^\d+/)?.[0] || "",
-          pifDescription: currentPIF.replace(/^\d+\.\s*/, '').trim()
+          pifDescription: currentPIF.replace(/^\d+\.\s*/, "").trim()
         });
       }
-      
       currentPIF = line;
       continue;
     }
-    
-    // Add content to current PIF when not in operator section
+
+    // multi-line PIF text
     if (!inOperatorSection && currentPIF && !isValidPIF(line)) {
-      console.log(`📝 ADDING TO CURRENT PIF: "${line}"`);
       currentPIF += " " + line;
     }
   }
-  
-  // Save final comment if we ended while in operator section
+
+  // ===== finalize tail =====
   if (inOperatorSection && Object.keys(currentComment).length > 0) {
-    if (currentField && fieldContent) {
-      currentComment[currentField] = fieldContent.trim();
-    }
-    currentComment.category = categoryBeforeOperatorComments; // Use the correct category
-    operatorComments.push({...currentComment});
+    pushCurrentComment();
   }
-  
-  // Save final PIF if it exists and we're not in operator section (positive PIF at end)
+
   if (currentPIF && !inOperatorSection && isValidPIF(currentPIF)) {
-    console.log(`📝 SAVING FINAL PIF (POSITIVE): "${currentPIF}"`);
     pifData.push({
       pifNumber: currentPIF.match(/^\d+/)?.[0] || "",
-      pifDescription: currentPIF.replace(/^\d+\.\s*/, '').trim()
+      pifDescription: currentPIF.replace(/^\d+\.\s*/, "").trim()
     });
   }
-  
-  console.log("=== FINAL RESULTS ===");
-  console.log("PIFs found:", pifData);
-  console.log("Operator comments found:", operatorComments.length);
-  
-  return {
-    operatorComments,
-    pifData
-  };
+
+  return { operatorComments, pifData };
 }
 
-// Helper function to validate if a line is a legitimate PIF
 function isValidPIF(line) {
-  // Must start with a number 1-20, followed by period, space, and meaningful content
-  // Must NOT contain operator comment keywords that suggest it's part of operator content
   const pifPattern = /^([1-9]|1[0-9]|20)\.\s+\w/;
   const hasOperatorKeywords = /\b(root cause|corrective action|preventative action|immediate cause)\b/i.test(line);
-  const hasDatePattern = /\b\d{2}\s+\w{3}\s+\d{4}\b/.test(line); // Date like "11 Oct 2024"
-  const isYearPattern = /^(19|20)\d{2}\.\s/.test(line); // Starts with year like "2023. "
-  const isVeryLong = line.length > 500; // PIFs shouldn't be extremely long on first line
-  
-  return pifPattern.test(line) && 
-         !hasOperatorKeywords && 
-         !hasDatePattern && 
-         !isYearPattern &&
-         !isVeryLong;
+  const hasDatePattern = /\b\d{2}\s+\w{3}\s+\d{4}\b/.test(line);
+  const isYearPattern = /^(19|20)\d{2}\.\s/.test(line);
+  const isVeryLong = line.length > 500;
+  return (
+    pifPattern.test(line) &&
+    !hasOperatorKeywords &&
+    !hasDatePattern &&
+    !isYearPattern &&
+    !isVeryLong
+  );
 }
 
 function extractTMSA(filterQuestion) {
   // const tmsaData = [];
-  
+
   for (let i = 0; i < filterQuestion.length; i++) {
     const line = filterQuestion[i].data.trim();
-    
+
     if (!line) continue;
 
-     const tmsaMatch = line.match(/(\d+[A-Z]?\.\d+\.\d+(?:\.\d+)?)\s*-\s*(.+)/);
+    const tmsaMatch = line.match(/(\d+[A-Z]?\.\d+\.\d+(?:\.\d+)?)\s*-\s*(.+)/);
     if (tmsaMatch) {
       return tmsaMatch[1]; // Return the first match found
     }
-    
+
     // Alternative: standalone TMSA number on its own line
     const standaloneTmsaMatch = line.match(/^(\d+[A-Z]?\.\d+\.\d+(?:\.\d+)?)$/);
     if (standaloneTmsaMatch) {
       return standaloneTmsaMatch[1]; // Return the first match found
-    } 
+    }
     // const tmsaMatch = line.match(/(\d+[A-Z]?\.\d+\.\d+(?:\.\d+)?)\s*-\s*(.+)/);
     // if (tmsaMatch) {
     //   tmsaData.push({
@@ -1500,7 +1550,7 @@ function extractTMSA(filterQuestion) {
     //   });
     //   continue;
     // }
-    
+
     // // Alternative: standalone TMSA number on its own line
     // const standaloneTmsaMatch = line.match(/^(\d+[A-Z]?\.\d+\.\d+(?:\.\d+)?)$/);
     // if (standaloneTmsaMatch) {
@@ -1511,17 +1561,17 @@ function extractTMSA(filterQuestion) {
     //   continue;
     // }
 
-    
+
     // Stop processing if we hit Operator Comments section
     if (line.toLowerCase().includes("operator comments")) {
       break;
     }
   }
-  
+
   return null;
 }
 
 module.exports = {
-    convertToExcel,
-    exportToExcel
+  convertToExcel,
+  exportToExcel
 }
