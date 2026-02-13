@@ -1,0 +1,157 @@
+import dayjs from "dayjs";
+import { useLocation } from "react-router-dom";
+
+const MemberIssuesModal = () => {
+    const { state } = useLocation();
+    const issuesData = state?.issuesData;
+    if (!issuesData) return null;
+    console.log(issuesData)
+
+    const { member, monthlyIssues } = issuesData;
+
+    const monthsWithIssues = Object.values(monthlyIssues || {}).filter(
+        issues => issues.length > 0
+    );
+
+    const totalBooks = monthsWithIssues.reduce(
+        (sum, issues) => sum + issues.length,
+        0
+    );
+
+    const hasData = monthsWithIssues.length > 0;
+
+    return (
+        <div className="px-3 pb-5">
+            <div className="bg-white w-full rounded-xl shadow-xl flex flex-col">
+
+                {/* Header */}
+                <div className="px-6 pt-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                            Books Issue History
+                            <p className="text-md text-gray-500">
+                                {member.name} · {member.memID}
+                            </p>
+                        </h2>
+
+                    </div>
+
+                    <button
+                        // onClick={onClose}
+                        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {/* 🔹 SUMMARY HINT */}
+                <div className="px-6 py-3 bg-gray-50 border-b text-sm text-gray-700 flex flex-wrap gap-6">
+                    <div>
+                        📅 Months with issues:{" "}
+                        <span className="font-semibold">{monthsWithIssues.length}</span>
+                    </div>
+                    <div>
+                        📚 Total books issued:{" "}
+                        <span className="font-semibold">{totalBooks}</span>
+                    </div>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto px-6 py-5">
+
+                    {/* EMPTY STATE */}
+                    {!hasData && (
+                        <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
+                            <p className="text-lg font-medium">No issue history found</p>
+                            <p className="text-sm mt-1">
+                                This member has not issued any books yet.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* DATA */}
+                    {hasData && (
+                        <div className="space-y-8">
+                            {Object.entries(monthlyIssues).map(([month, issues]) => (
+                                <div key={month} className="space-y-4">
+
+                                    {/* Month Header */}
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-base font-semibold text-blue-600">
+                                            {dayjs(month).format("MMMM YYYY")}
+                                        </h3>
+                                        <span className="text-xs text-gray-500">
+                                            {issues.length} issue{issues.length !== 1 ? "s" : ""}
+                                        </span>
+                                    </div>
+
+                                    {/* Issues */}
+                                    {issues.length === 0 ? (
+                                        <div className="border border-dashed rounded-lg p-4 text-sm text-gray-500 text-center">
+                                            No issues in this month
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {issues.map(issue => (
+                                                <div
+                                                    key={issue.issueId}
+                                                    className="border rounded-lg p-4 flex justify-between gap-4 hover:shadow-sm transition"
+                                                >
+                                                    <div className="space-y-1">
+                                                        <p className="font-medium text-gray-800">
+                                                            {issue.bookTitle}
+                                                        </p>
+
+                                                        <div className="text-sm text-gray-600 flex flex-col sm:flex-row sm:gap-4">
+                                                            <span>
+                                                                Issued:{" "}
+                                                                <strong>
+                                                                    {dayjs(issue.issueDate).format("DD MMM YYYY")}
+                                                                </strong>
+                                                            </span>
+
+                                                            <span>
+                                                                Returned:{" "}
+                                                                <strong>
+                                                                    {issue.returnDate
+                                                                        ? dayjs(issue.returnDate).format("DD MMM YYYY")
+                                                                        : "—"}
+                                                                </strong>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <span
+                                                        className={`h-fit px-3 py-1 rounded-full text-xs font-semibold ${issue.status === "active"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : "bg-gray-200 text-gray-700"
+                                                            }`}
+                                                    >
+                                                        {issue.status === "active" ? "ACTIVE" : "RETURNED"}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="border-t px-6 py-3 flex justify-end bg-gray-50">
+                    <button
+                        // onClick={onClose}
+                        className="px-5 py-2 rounded-md bg-gray-800 text-white hover:bg-gray-900"
+                    >
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    );
+};
+
+export default MemberIssuesModal;
