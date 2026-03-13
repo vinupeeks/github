@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to SIRE 2.0 Analytics - Trial Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+        <style>
+        .credentials-card {
+            padding: 5px;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .credentials-title {
+            font-size: 24px;
+            color: #000000;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .credential-item {
+            margin-bottom: 20px;
+            padding: 18px 24px;
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .credential-label {
+            font-weight: 500;
+            color: #000000;
+            min-width: 120px;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        .features-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .features-title {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .credential-value {
+            color: #000000 !important;
+            text-decoration: none !important;
+            font-family: 'Poppins', monospace;
+            font-size: 20px;
+            padding-top: 4px;
+            flex: 1;
+            font-weight: 800;
+            display: block; 
+            word-break: break-word;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+            justify-items: center;
+            align-items: center;
+            place-items: center;
+        }
+        
+        .feature-item {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 10px !important;
+            margin :0 auto;
+            text-align: center;
+            padding: 20px;
+            background: #d2f5f5;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .feature-item:hover {
+            background: #d2f5f5;
+            transform: translateY(-3px);
+        }
+        
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        </style>
+    
+</head>
+<body>
+    <div style="max-width: 100%; margin: 0 auto; font-family:arial; background: #ffffff;  border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; position: relative;">
+        <div style="background: linear-gradient(45deg, #00d4aa, #00b8d4); padding: 40px 30px; text-align: center; position: relative; overflow: hidden;">
+            <div style="font-size: 32px; font-weight: 700; color: #ffffff; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); position: relative; z-index: 1;">SIRE 2.0 Analytics</div>
+        </div>
+        
+        <div style="padding: 40px 30px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 28px; color: #2c3e50; margin-bottom: 15px; font-weight: 600;">Welcome, {{fullname}}!</h1>
+                <p style="font-size: 16px; margin-bottom: 30px; color: #94a3b8; margin: 10px 0 0;">Your trial access to SIRE 2.0 Analytics has been activated. Start exploring powerful analytics and insights for your business.</p>
+            </div>
+            
+            {{!-- <div style="padding: 0px 40px; margin-bottom: 10px; position: relative; overflow: hidden; width: 100%; margin: 0 auto; ">
+                <h2 style="font-size: 24px; color: #000000; margin-bottom: 30px; font-weight: 700; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.3); position: relative; z-index: 2;">Your Login Credentials</h2>
+                
+                <div style="margin-bottom: 2px; padding: 1px 24px; background: rgba(255, 255, 255, 0.1); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.4s ease; position: relative; z-index: 2; backdrop-filter: blur(10px);">
+                    <span style="font-weight: 500; color: #000000; min-width: 100%; font-size: 14px; letter-spacing: 0.5px; opacity: 0.9;">Email:</span><br />
+                    <a style="color: #000000 !important; text-decoration: none !important; font-family: Arial;font-size: 20px; padding-top: 8px; border-radius: 12px; flex: 1; font-weight: 800; display: inline-block;">{{email}}</a>
+                </div>
+                <div style="margin-bottom: 2px; padding: 1px 24px; background: rgba(255, 255, 255, 0.1); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.4s ease; position: relative; z-index: 2; backdrop-filter: blur(10px);">
+                    <span style="font-weight: 500; color: #000000; min-width: 100%; font-size: 14px; letter-spacing: 0.5px; opacity: 0.9;">Password:</span><br />
+                    <span style="color: #000000 !important; text-decoration: none !important; font-family: Arial;font-size: 24px; padding-top: 8px; border-radius: 12px; flex: 1; font-weight: 800; display: inline-block;">{{password}}</span>
+                </div>
+            </div> --}}
+                
+                <div class="credentials-card">
+                <h2 class="credentials-title">Your Login Credentials</h2>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Email:</span><br />
+                    <a class="credential-value">{{email}}</a>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Password:</span><br />
+                    <span class="credential-value" style="font-size: 24px">{{password}}</span>
+                </div>
+            </div>
+            
+            <a href="{{web_link}}" style="display: inline-block; background: linear-gradient(45deg, #00d4aa, #00b8d4); color: #ffffff!important; text-decoration: none; padding: 20px 50px; border-radius: 50px; font-weight: 700; font-size: 18px; text-align: center; transition: all 0.4s ease; box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4); position: relative; overflow: hidden; margin: 30px auto; display: block; width: fit-content; text-transform: uppercase; letter-spacing: 1px; border: 2px solid rgba(255, 255, 255, 0.3);">
+                 Access Your Dashboard
+            </a>
+            
+            <div class="features-section">
+                <h2 class="features-title">What's Included in Your Trial</h2>
+                
+                <div class="features-grid">
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <div class="feature-text">Comparison across the fleet,</div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <div class="feature-text">Comment extraction</div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <div class="feature-text">Repeated VIQs</div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <div class="feature-text">Trend analysis and more</div>
+                    </div>
+                </div>
+            </div>
+            <!-- <div style="text-align:center; margin-top:20px;">
+                <h3 style="font-family:Arial, sans-serif; font-size:18px; color:#333; margin-bottom: 10px">See It in Action</h3>
+                <a href="https://www.youtube.com/watch?v=8r0YlQ0xpVA" target="_blank">
+                    
+                </a>
+            </div> -->
+        
+        <div style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef;">
+            <p style="color: #6c757d; font-size: 14px; margin-bottom: 15px;">We are here to help you understand the complete process. If you need any clarifications, please email us at info@solmarinetech.com</p>
+            <p style="color: #6c757d; font-size: 14px; margin-bottom: 15px;">© {{year}} Solmarine Tech. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
