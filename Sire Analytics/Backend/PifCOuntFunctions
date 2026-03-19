@@ -1,0 +1,350 @@
+// Report summary withseverity
+
+const getUniquePifsCount0 = async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        const [inspection, vesselInspection, groupedScores] = await Promise.all([
+
+            // 1️⃣ Questions
+            InspectionQuestions.findAll({
+                where: {
+                    inspection_id: id,
+                    status: "active"
+                },
+                order: [['id', 'ASC']]
+            }),
+
+            // 2️⃣ Vessel Inspection
+            VesselInspection.findOne({
+                where: { id: id },
+                attributes: [
+                    'cheif_engineer_name',
+                    'inspector',
+                    'master',
+                    'company_name',
+                    'port_name',
+                    'country',
+                    'vessel_sup_name',
+                    'lock_status'
+                ],
+                include: [Superintendent]
+            }),
+
+            // 3️⃣ GROUPED SCORES (MySQL 🔥)
+            InspectionScore.findAll({
+                attributes: [
+                    'question_id',
+                    'category',
+                    'isNegative',
+
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
+
+                    // ✅ avoid comma issue using custom separator
+                    [Sequelize.fn('GROUP_CONCAT', Sequelize.literal('noc SEPARATOR "||"')), 'noc_list'],
+
+                    // representative fields
+                    [Sequelize.fn('MIN', Sequelize.col('remark')), 'remark'],
+                    [Sequelize.fn('MIN', Sequelize.col('score')), 'score'],
+                    [Sequelize.fn('MIN', Sequelize.col('negative')), 'negative']
+                ],
+                where: {
+                    status: 'active'
+                },
+                group: ['question_id', 'category', 'isNegative']
+            })
+        ]);
+
+        if (!inspection || inspection.length === 0) {
+            return res.status(404).json({
+                message: "No inspection data found",
+                success: false
+            });
+        }
+
+        // 4️⃣ Convert grouped scores → map
+        const scoreMap = {};
+
+        groupedScores.forEach(s => {
+            const key = s.question_id;
+
+            if (!scoreMap[key]) scoreMap[key] = [];
+
+            scoreMap[key].push({
+                category: s.category,
+                isNegative: s.isNegative,
+                count: Number(s.get('count')),
+
+                // ✅ convert to array safely
+                noc_list: s.get('noc_list')
+                    ? s.get('noc_list').split('||')
+                    : [],
+
+                remark: s.get('remark'),
+                score: s.get('score'),
+                negative: s.get('negative')
+            });
+        });
+
+        // 5️⃣ Final response mapping
+        const data = inspection.map(item => {
+
+            const scores = scoreMap[item.id] || [];
+
+            const filterData = (category, type) =>
+                scores.filter(s =>
+                    s.category?.toLowerCase() === category &&
+                    s.isNegative?.toLowerCase() === type.toLowerCase()
+                );
+
+            return {
+                id: item.id,
+                question_no: item.viq,
+                tag: item.tag,
+                question: item.question,
+
+                // HUMAN
+                humanNegatives: filterData('human', 'yes'),
+                humanPositives: filterData('human', 'no'),
+                humanLargely: filterData('human', 'largely'),
+
+                // PROCESS
+                processNegatives: filterData('process', 'yes'),
+                processLargely: filterData('process', 'largely'),
+
+                // HARDWARE
+                hardwareNegatives: filterData('hardware', 'yes'),
+
+                // PHOTO
+                photoNegatives: filterData('photo', 'yes')
+            };
+        });
+
+        // 6️⃣ Response
+        res.status(200).json({
+            message: "success",
+            success: true,
+            vesselInspection,
+            data
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
+
+
+//  report summary without severity
+
+const getUniquePifsCount1 = async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        const [inspection, vesselInspection, groupedScores] = await Promise.all([
+
+            // 1️⃣ Questions
+            InspectionQuestions.findAll({
+                where: {
+                    inspection_id: id,
+                    status: "active"
+                },
+                order: [['id', 'ASC']]
+            }),
+
+            // 2️⃣ Vessel Inspection
+            VesselInspection.findOne({
+                where: { id: id },
+                attributes: [
+                    'cheif_engineer_name',
+                    'inspector',
+                    'master',
+                    'company_name',
+                    'port_name',
+                    'country',
+                    'vessel_sup_name',
+                    'lock_status'
+                ],
+                include: [Superintendent]
+            }),
+
+            // 3️⃣ GROUPED SCORES (MySQL 🔥)
+            InspectionScore.findAll({
+                attributes: [
+                    'question_id',
+                    'category',
+                    'isNegative',
+
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
+
+                    // ✅ avoid comma issue using custom separator
+                    [Sequelize.fn('GROUP_CONCAT', Sequelize.literal('noc SEPARATOR "||"')), 'noc_list'],
+
+                    // representative fields
+                    [Sequelize.fn('MIN', Sequelize.col('remark')), 'remark'],
+                    [Sequelize.fn('MIN', Sequelize.col('score')), 'score'],
+                    [Sequelize.fn('MIN', Sequelize.col('negative')), 'negative']
+                ],
+                where: {
+                    status: 'active'
+                },
+                group: ['question_id', 'category', 'isNegative']
+            })
+        ]);
+
+        if (!inspection || inspection.length === 0) {
+            return res.status(404).json({
+                message: "No inspection data found",
+                success: false
+            });
+        }
+
+        // 4️⃣ Convert grouped scores → map
+        const scoreMap = {};
+
+        groupedScores.forEach(s => {
+            const key = s.question_id;
+
+            if (!scoreMap[key]) scoreMap[key] = [];
+
+            scoreMap[key].push({
+                category: s.category,
+                isNegative: s.isNegative,
+                count: Number(s.get('count')),
+
+                // ✅ convert to array safely
+                noc_list: s.get('noc_list')
+                    ? s.get('noc_list').split('||')
+                    : [],
+
+                remark: s.get('remark'),
+                negative: s.get('negative')
+            });
+        });
+
+        // 5️⃣ Final response mapping
+        const data = inspection.map(item => {
+
+            const scores = scoreMap[item.id] || [];
+
+            const filterData = (category, type) =>
+                scores.filter(s =>
+                    s.category?.toLowerCase() === category &&
+                    s.isNegative?.toLowerCase() === type.toLowerCase()
+                );
+
+            return {
+                id: item.id,
+                question_no: item.viq,
+                tag: item.tag,
+                question: item.question,
+
+                // HUMAN
+                humanNegatives: filterData('human', 'yes'),
+                humanPositives: filterData('human', 'no'),
+                humanLargely: filterData('human', 'largely'),
+
+                // PROCESS
+                processNegatives: filterData('process', 'yes'),
+                processLargely: filterData('process', 'largely'),
+
+                // HARDWARE
+                hardwareNegatives: filterData('hardware', 'yes'),
+
+                // PHOTO
+                photoNegatives: filterData('photo', 'yes')
+            };
+        });
+
+        // 6️⃣ Response
+        res.status(200).json({
+            message: "success",
+            success: true,
+            vesselInspection,
+            data
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
+
+
+// report summary for only counts; each items -ve / +ve / largely.
+const getUniquePifsCount = async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        const summary = await InspectionScore.findAll({
+            attributes: [
+                'category',
+                'isNegative',
+                [Sequelize.fn('COUNT', Sequelize.col('inspection_scores.id')), 'count']
+            ],
+            where: {
+                status: 'active'
+            },
+            include: [
+                {
+                    model: InspectionQuestions,
+                    attributes: [],
+                    where: {
+                        inspection_id: id,
+                        status: 'active'
+                    }
+                }
+            ],
+            group: ['category', 'isNegative']
+        });
+
+        // 🔁 Convert to clean response
+        const result = {
+            human: { negative: 0, positive: 0, largely: 0 },
+            process: { negative: 0, largely: 0 },
+            hardware: { negative: 0 },
+            photo: { negative: 0 }
+        };
+
+        summary.forEach(item => {
+            const category = item.category?.toLowerCase();
+            const type = item.isNegative?.toLowerCase();
+            const count = Number(item.get('count'));
+
+            if (category === 'human') {
+                if (type === 'yes') result.human.negative = count;
+                if (type === 'no') result.human.positive = count;
+                if (type === 'largely') result.human.largely = count;
+            }
+
+            if (category === 'process') {
+                if (type === 'yes') result.process.negative = count;
+                if (type === 'largely') result.process.largely = count;
+            }
+
+            if (category === 'hardware') {
+                if (type === 'yes') result.hardware.negative = count;
+            }
+
+            if (category === 'photo') {
+                if (type === 'yes') result.photo.negative = count;
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
