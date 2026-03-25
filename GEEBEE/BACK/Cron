@@ -1,0 +1,218 @@
+const cron = require("node-cron");
+const { uniquecountrywiseReport } = require("../controllers/reportController");
+const { ceoFeePaidReport } = require("../controllers/counselorDahshboardController");
+const mysql = require("mysql2");
+
+
+var con = mysql.createConnection({
+    host: process.env.SQLHOST,
+    user: process.env.SQLUSER,
+    password: process.env.SQLPASSWORD,
+    database: process.env.SQLDB
+});
+
+
+function getFinancialYears() {
+
+    const today = new Date();
+    const year = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+
+    const formatDate = (date) => {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`; // yyyy-mm-dd
+    };
+
+    const result = [];
+
+    // Previous 3 financial years
+    for (let i = 3; i >= 1; i--) {
+        result.push({
+            name: `${year - i}-${(year - i + 1).toString().slice(-2)}`,
+            startDate: formatDate(new Date(year - i, 3, 1)),
+            endDate: formatDate(new Date(year - i + 1, 2, 31)),
+        });
+    }
+
+    // Current financial year
+    result.push({
+        name: `${year}-${(year + 1).toString().slice(-2)}`,
+        startDate: formatDate(new Date(year, 3, 1)),
+        endDate: formatDate(new Date(year + 1, 2, 31)),
+    });
+
+    // Next 2 financial years
+    for (let i = 1; i <= 2; i++) {
+        result.push({
+            name: `${year + i}-${(year + i + 1).toString().slice(-2)}`,
+            startDate: formatDate(new Date(year + i, 3, 1)),
+            endDate: formatDate(new Date(year + i + 1, 2, 31)),
+        });
+    }
+
+    return result;
+}
+
+function callStoredProcedureuniquecountrywise(param1, param2, param3, param4, param5, param6) {
+    return new Promise((resolve, reject) => {
+        const query = 'CALL uniquefinal_query(?, ?, ?, ?, ?, ?)';
+        const values = [param1, param2, param3, param4, param5, param6];
+
+        con.query(query, values, (error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(results);
+            }
+        });
+    });
+}
+
+const reportCountMismatchCron = () => {
+
+    cron.schedule("0 */1 * * * *", async () => {
+
+        console.log("Report Count Cron Started:", new Date());
+
+        try {
+
+            // 1️⃣ CEO Report
+            let ceoData = null;
+
+            const req = {};
+            const res = {
+                status: () => ({
+                    json: (data) => {
+                        ceoData = data;
+                    }
+                })
+            };
+
+            await ceoFeePaidReport(req, res);
+            console.log(`get data>>>>>>>>>>>>>>>>>>>>>>>>.`, ceoData);
+
+            const ceoCounts = ceoData.counts;
+
+            // 2️⃣ Financial Years
+            const financialYears = getFinancialYears();
+
+            const results = [];
+
+            for (const fy of financialYears) {
+
+                const req = {
+                    query: {
+                        from: fy.startDate,
+                        to: fy.endDate,
+                        role: 14,
+                        officeId: "",
+                        vids: "",
+                        userId: 895
+                    }
+                };
+
+                const res = {};
+                // 3️⃣ Fetch countrywise report
+                // const reportData = await uniquecountrywiseReport(req, res);
+
+                reportData = await callStoredProcedureuniquecountrywise(req.query.from, req.query.to, req.query.role, req.query.officeId, req.query.vids, req.query.userId)
+                console.log(`countrywise report>>>>>>>>>>>>>>>>>>`, req.query.from, req.query.to , reportData);
+
+                const rows = reportData || [];
+                // const reportData = await new Promise((resolve) => {
+
+                //     const res = {
+                //         status: (code) => ({
+                //             json: (data) => {
+                //                 resolve({
+                //                     status: code,
+                //                     data: data.data || []
+                //                 });
+                //             }
+                //         })
+                //     };
+
+                //     uniquecountrywiseReport(req, res).catch((err) => {
+                //         console.error("Controller Error:", err);
+                //         resolve({
+                //             status: 500,
+                //             data: []
+                //         });
+                //     });
+
+                // });
+
+                // if (reportData.status !== 200) {
+                //     console.log(`No data for FY ${fy.name}`);
+                //     continue;
+                // }
+
+                let expectedVisa = 0;
+                let totalExpectedVisa = 0;
+
+                // 4️⃣ Calculate totals
+                rows.forEach(resultSet => {
+
+                    if (Array.isArray(resultSet)) {
+
+                        resultSet.forEach(item => {
+
+                            expectedVisa += Number(item.ExpectedVisa || 0);
+
+                            totalExpectedVisa +=
+                                Number(item.DocPending || 0) +
+                                Number(item.DocieltsPending || 0) +
+                                Number(item.Docs_Pending_IELTS || 0) +
+                                Number(item.full_docs || 0) +
+                                Number(item.awaiting_offer || 0) +
+                                Number(item.ConditionalOffer || 0) +
+                                Number(item.UnConditionalOffer || 0) +
+                                Number(item.offerAccepted || 0) +
+                                Number(item.gte || 0) +
+                                Number(item.TotalVisaApplied || 0) +
+                                Number(item.TotalVisaApproved || 0) +
+                                Number(item.TotalProcessingVisa || 0) +
+                                Number(item.TotalProcessingVisafundready || 0) +
+                                Number(item.totalProcessingVisafundnotready || 0);
+
+                        });
+
+                    }
+
+                });
+
+                // 5️⃣ CEO values
+                const ceoExpected = Number(ceoCounts?.[fy.name]?.expectedVisa || 0);
+                const ceoTotal = Number(ceoCounts?.[fy.name]?.totalExpectedVisa || 0);
+
+                // 6️⃣ Check match
+                const matched =
+                    expectedVisa === ceoExpected &&
+                    totalExpectedVisa === ceoTotal;
+
+                // 7️⃣ Store result
+                results.push({
+                    financialYear: fy.name,
+                    expectedVisa,
+                    totalExpectedVisa,
+                    ceoExpectedVisa: ceoExpected,
+                    ceoTotalExpectedVisa: ceoTotal,
+                    matched
+                });
+
+            }
+
+            console.log("Final Result:", results);
+
+        } catch (error) {
+            console.error("Cron Error:", error);
+
+        }
+
+    });
+
+};
+
+
+module.exports = reportCountMismatchCron;
